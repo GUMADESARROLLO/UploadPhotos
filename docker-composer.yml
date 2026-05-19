@@ -1,0 +1,17 @@
+services:
+  app:
+    container_name: cn_uploader
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '84:4321'
+    environment:
+      HOST: '0.0.0.0'
+      PORT: '4321'
+      DB_HOST: ${MYSQL_HOST:-db}
+      DB_PORT: ${MYSQL_PORT:-3306}
+      DB_USER: ${MYSQL_USER:-usr_fleetfuel}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-pwd_fleetfuel}
+      DB_NAME: ${MYSQL_DATABASE:-db_fleetfuel}
+    restart: unless-stopped
