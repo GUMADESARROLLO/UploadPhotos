@@ -87,8 +87,6 @@ import Navbar from "../components/Navbar.astro";
   </main>
 
   <script type="module">
-    import { findUserByEmail, createUser } from "/js/db.js";
-
     const SERVER = window.location.origin;
 
     const storedEmail = localStorage.getItem("wedding_email");
@@ -136,7 +134,7 @@ import Navbar from "../components/Navbar.astro";
       }
     }
 
-    function loginGuest(guest) {
+    async function loginGuest(guest) {
       localStorage.setItem("wedding_id", String(guest.id));
       localStorage.setItem("wedding_user", guest.nombre);
       localStorage.setItem("wedding_email", guest.email);
@@ -165,19 +163,6 @@ import Navbar from "../components/Navbar.astro";
           return;
         }
 
-        const localUser = await findUserByEmail(email);
-        if (localUser) {
-          const created = await createGuestOnServer(localUser.userName, email);
-          if (created) {
-            loginGuest(created);
-            return;
-          }
-          localStorage.setItem("wedding_user", localUser.userName);
-          localStorage.setItem("wedding_email", email);
-          window.location.href = "/upload";
-          return;
-        }
-
         step1.classList.add("hidden");
         step2.classList.remove("hidden");
         step2Email.textContent = `Correo: ${email}`;
@@ -203,10 +188,8 @@ import Navbar from "../components/Navbar.astro";
           return;
         }
 
-        await createUser(name, currentEmail);
-        localStorage.setItem("wedding_user", name);
-        localStorage.setItem("wedding_email", currentEmail);
-        window.location.href = "/upload";
+        emailError.textContent = "Error al crear usuario en el servidor.";
+        emailError.classList.remove("hidden");
       } catch (err) {
         emailError.textContent = "Error al crear usuario. Intenta de nuevo.";
         emailError.classList.remove("hidden");

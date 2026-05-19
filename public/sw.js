@@ -1,4 +1,4 @@
-const CACHE_NAME = "wedding-album-v3";
+const CACHE_NAME = "wedding-album-v4";
 const ASSETS = [
   "/",
   "/upload",

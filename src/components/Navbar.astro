@@ -5,54 +5,80 @@
       <span class="text-xl font-semibold tracking-wide font-serif">Álbum de Boda</span>
     </a>
 
-    <div class="flex items-center gap-6">
-      <span id="welcomeUser" class="text-wedding-gold text-sm font-medium hidden"></span>
-      <div class="flex items-center gap-4 text-sm font-medium">
-        <a
-          href="/upload"
-          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
-          id="navUpload"
-        >
-          Subir Fotos
-        </a>
-        <a
-          href="/albums"
-          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
-          id="navAlbums"
-        >
-          Album
-        </a>
-        <button
-          id="logoutBtn"
-          class="px-3 py-1.5 rounded transition-colors text-red-300 hover:text-red-200 hover:bg-red-900/30 cursor-pointer hidden"
-        >
-          Cerrar sesión
+    <div class="flex items-center gap-4 text-sm font-medium">
+      <a
+        href="/upload"
+        class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
+        id="navUpload"
+      >
+        Subir Fotos
+      </a>
+      <a
+        href="/albums"
+        class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
+        id="navAlbums"
+      >
+        Álbum
+      </a>
+
+      <div id="userDropdown" class="relative hidden">
+        <button id="dropdownTrigger" class="flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:bg-white/10 cursor-pointer text-left">
+          <div class="min-w-0">
+            <div id="dropdownName" class="text-wedding-gold font-medium text-sm leading-tight truncate max-w-[140px]"></div>
+            <div id="dropdownEmail" class="text-wedding-cream/50 text-xs leading-tight truncate max-w-[140px]"></div>
+          </div>
+          <svg class="w-4 h-4 shrink-0 text-wedding-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
+        <div id="dropdownMenu" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-50 overflow-hidden">
+          <button id="logoutBtn" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
   <script>
     const userName = localStorage.getItem("wedding_user");
     const userEmail = localStorage.getItem("wedding_email");
+
     if (userName) {
-      const el = document.getElementById("welcomeUser");
-      el.textContent = userName + (userEmail ? " · " + userEmail : "");
-      el.classList.remove("hidden");
-      document.getElementById("logoutBtn").classList.remove("hidden");
       document.getElementById("navUpload").classList.remove("hidden");
       document.getElementById("navAlbums").classList.remove("hidden");
+
+      const dd = document.getElementById("userDropdown");
+      dd.classList.remove("hidden");
+
+      document.getElementById("dropdownName").textContent = userName;
+      document.getElementById("dropdownEmail").textContent = userEmail || "";
+
       const path = window.location.pathname;
       if (path === "/upload") {
         document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
       } else if (path.startsWith("/album")) {
         document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
       }
+
+      // Dropdown toggle
+      const trigger = document.getElementById("dropdownTrigger");
+      const menu = document.getElementById("dropdownMenu");
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("hidden");
+      });
+      document.addEventListener("click", () => menu.classList.add("hidden"));
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("wedding_user");
+        localStorage.removeItem("wedding_email");
+        localStorage.removeItem("wedding_id");
+        window.location.href = "/";
+      });
     }
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      localStorage.removeItem("wedding_user");
-      localStorage.removeItem("wedding_email");
-      localStorage.removeItem("wedding_id");
-      window.location.href = "/";
-    });
   </script>
 </nav>

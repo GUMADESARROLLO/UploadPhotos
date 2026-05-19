@@ -46,7 +46,7 @@ import Navbar from "../components/Navbar.astro";
   </main>
 
   <script type="module">
-    import { savePhoto, syncPhotoToServer } from "/js/db.js";
+    import { uploadPhotoToServer } from "/js/db.js";
 
     const userName = localStorage.getItem("wedding_user");
     const guestId = localStorage.getItem("wedding_id");
@@ -169,12 +169,10 @@ import Navbar from "../components/Navbar.astro";
           await new Promise((r) => setTimeout(r, 100));
 
           fill.style.width = "60%";
-          status.textContent = "Guardando...";
-
-          await savePhoto(file, userName);
+          status.textContent = "Subiendo al servidor...";
 
           const email = localStorage.getItem("wedding_email") || "";
-          syncPhotoToServer(file, userName, email, guestId);
+          await uploadPhotoToServer(file, userName, email, guestId);
 
           fill.style.width = "100%";
           status.textContent = "Completado";

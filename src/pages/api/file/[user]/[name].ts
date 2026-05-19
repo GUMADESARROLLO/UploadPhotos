@@ -7,14 +7,14 @@ import { getPool, initDb } from "../../../../lib/db-config";
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
 export const GET: APIRoute = async ({ params }) => {
-  const userName = params.user ? decodeURIComponent(params.user) : "";
+  const folderName = params.user ? decodeURIComponent(params.user) : "";
   const storedName = params.name;
 
-  if (!userName || !storedName) {
+  if (!folderName || !storedName) {
     return new Response("Not found", { status: 404 });
   }
 
-  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(userName), storedName);
+  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(folderName), storedName);
 
   try {
     const buffer = await fs.readFile(filePath);
@@ -41,15 +41,15 @@ export const GET: APIRoute = async ({ params }) => {
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
-  const userName = params.user ? decodeURIComponent(params.user) : "";
+  const folderName = params.user ? decodeURIComponent(params.user) : "";
   const storedName = params.name;
 
-  if (!userName || !storedName) {
+  if (!folderName || !storedName) {
     return new Response(JSON.stringify({ error: "Missing params" }), { status: 400 });
   }
 
   // Delete file from disk
-  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(userName), storedName);
+  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(folderName), storedName);
   try {
     await fs.unlink(filePath);
   } catch {
@@ -61,8 +61,8 @@ export const DELETE: APIRoute = async ({ params }) => {
     await initDb();
     const pool = getPool();
     await pool.execute(
-      "DELETE FROM photos WHERE userName = ? AND storedName = ?",
-      [userName, storedName]
+      "DELETE FROM photos WHERE folderName = ? AND storedName = ?",
+      [folderName, storedName]
     );
   } catch (err) {
     console.error("DB delete error:", err);

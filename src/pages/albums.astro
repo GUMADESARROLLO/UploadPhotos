@@ -13,16 +13,15 @@ import Navbar from "../components/Navbar.astro";
         <p id="photoCount" class="text-gray-500 mt-1"></p>
       </div>
 
-      <div id="toolbar" class="hidden items-center gap-3 flex-wrap">
-        <label class="flex items-center gap-2 text-sm cursor-pointer select-none bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
-          <input type="checkbox" id="selectAll" class="w-4 h-4 accent-wedding-gold cursor-pointer" />
+      <div id="toolbar" class="hidden grid grid-cols-6 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+        <button id="selectAllBtn" class="col-span-2 text-sm px-2 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
           Seleccionar todo
-        </label>
-        <button id="deleteSelectedBtn" class="text-sm px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
-          Eliminar seleccionadas
         </button>
-        <button id="deleteAlbumBtn" class="text-sm px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer">
-          Eliminar álbum
+        <button id="deleteSelectedBtn" class="col-span-2 text-sm px-2 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+          Eliminar
+        </button>
+        <button id="deleteAlbumBtn" class="col-span-2 text-sm px-2 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer">
+          Eliminar todo
         </button>
       </div>
     </div>
@@ -37,15 +36,12 @@ import Navbar from "../components/Navbar.astro";
 
   <div id="viewer" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
     <button id="closeViewer" class="absolute top-4 right-4 text-white text-4xl hover:opacity-70 cursor-pointer z-10">&times;</button>
-    <div class="flex flex-col xl:flex-row gap-4 max-w-5xl w-full max-h-[90vh] items-center">
-      <div class="flex-1 min-w-0 flex items-center justify-center bg-black/40 rounded-xl overflow-hidden max-h-[70vh] xl:max-h-[85vh]">
-        <img id="viewerImg" class="max-w-full max-h-full object-contain" />
-      </div>
-      <div id="detailPanel" class="bg-white rounded-xl p-6 w-full xl:w-80 shrink-0 space-y-4 max-h-[70vh] xl:max-h-[85vh] overflow-y-auto">
-        <div id="detailPreview" class="w-full aspect-video rounded-lg overflow-hidden bg-gray-100 xl:hidden mb-2">
-          <img id="detailThumb" class="w-full h-full object-cover" />
-        </div>
-        <h3 class="font-semibold text-lg text-wedding-dark font-serif">Detalles de la Foto</h3>
+      <div class="max-w-xl w-full max-h-[90vh]">
+        <div id="detailPanel" class="bg-white rounded-xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div id="detailPreview" class="w-full aspect-video rounded-lg overflow-hidden bg-gray-100 mb-2">
+            <img id="detailImg" class="w-full h-full object-cover" />
+          </div>
+          <h3 class="font-semibold text-lg text-wedding-dark font-serif">Detalles de la Foto</h3>
         <div class="space-y-3 text-sm">
           <div>
             <span class="text-gray-400 block text-xs uppercase tracking-wide">Archivo</span>
@@ -68,18 +64,20 @@ import Navbar from "../components/Navbar.astro";
             <span id="detailUser" class="font-medium"></span>
           </div>
         </div>
-        <a id="downloadBtn" download class="block w-full text-center px-4 py-2.5 bg-wedding-gold text-wedding-dark font-medium rounded-lg hover:bg-wedding-gold/90 transition-colors cursor-pointer">
-          Descargar Foto
-        </a>
-        <button id="deleteSingleBtn" class="block w-full text-center px-4 py-2.5 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors cursor-pointer">
-          Eliminar Foto
-        </button>
+        <div class="flex gap-2">
+          <a id="downloadBtn" download class="flex-1 text-center px-3 py-2.5 bg-wedding-gold text-wedding-dark font-medium rounded-lg hover:bg-wedding-gold/90 transition-colors cursor-pointer text-sm">
+            Descargar
+          </a>
+          <button id="deleteSingleBtn" class="flex-1 text-center px-3 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors cursor-pointer text-sm">
+            Eliminar
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { getPhotosByUser, deletePhoto, deletePhotosByUser, fetchPhotosByGuest, fetchPhotoBlobFromServer, deletePhotoFromServer } from "/js/db.js";
+    import { fetchPhotosByGuest, fetchPhotoBlobFromServer, deletePhotoFromServer } from "/js/db.js";
 
     const guestId = localStorage.getItem("wedding_id");
     const userName = localStorage.getItem("wedding_user");
@@ -91,12 +89,11 @@ import Navbar from "../components/Navbar.astro";
     const count = document.getElementById("photoCount");
     const grid = document.getElementById("photoGrid");
     const toolbar = document.getElementById("toolbar");
-    const selectAll = document.getElementById("selectAll");
+    const selectAllBtn = document.getElementById("selectAllBtn");
     const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
     const deleteAlbumBtn = document.getElementById("deleteAlbumBtn");
     const viewer = document.getElementById("viewer");
-    const viewerImg = document.getElementById("viewerImg");
-    const detailThumb = document.getElementById("detailThumb");
+    const detailImg = document.getElementById("detailImg");
     const detailFileName = document.getElementById("detailFileName");
     const detailFileSize = document.getElementById("detailFileSize");
     const detailDimensions = document.getElementById("detailDimensions");
@@ -139,7 +136,8 @@ import Navbar from "../components/Navbar.astro";
     function updateToolbar() {
       deleteSelectedBtn.disabled = selected.size === 0;
       deleteSelectedBtn.textContent = `Eliminar (${selected.size})`;
-      selectAll.checked = photos.length > 0 && selected.size === photos.length;
+      const allSelected = photos.length > 0 && selected.size === photos.length;
+      selectAllBtn.textContent = allSelected ? "Deseleccionar todo" : "Seleccionar todo";
     }
 
     function selectPhoto(id) {
@@ -154,8 +152,7 @@ import Navbar from "../components/Navbar.astro";
     async function showDetails(photo) {
       currentPhoto = photo;
       viewer.classList.remove("hidden");
-      viewerImg.src = URL.createObjectURL(photo.fileData);
-      detailThumb.src = URL.createObjectURL(photo.fileData);
+      detailImg.src = URL.createObjectURL(photo.fileData);
       detailFileName.textContent = photo.fileName;
       detailFileSize.textContent = formatSize(photo.size);
       detailDate.textContent = formatDate(photo.uploadedAt);
@@ -238,37 +235,28 @@ import Navbar from "../components/Navbar.astro";
     }
 
     async function loadPhotos() {
-      const localPhotos = await getPhotosByUser(userName);
-      const serverPhotos = guestId ? await fetchPhotosByGuest(guestId) : [];
+      if (!guestId) {
+        photos = [];
+        renderPhotos();
+        return;
+      }
 
-      const localMap = {};
-      localPhotos.forEach((p) => { localMap[p.fileName] = p; });
+      const serverPhotos = await fetchPhotosByGuest(guestId);
       photos = [];
 
       for (const sp of serverPhotos) {
-        if (localMap[sp.fileName]) {
-          const local = localMap[sp.fileName];
-          local.url = sp.url;
-          photos.push(local);
-        } else {
-          const blob = await fetchPhotoBlobFromServer(sp.url);
-          if (blob) {
-            photos.push({
-              id: sp.id,
-              fileName: sp.fileName,
-              fileData: blob,
-              size: sp.size,
-              type: sp.type,
-              userName: sp.userName,
-              uploadedAt: sp.uploadedAt,
-              url: sp.url,
-            });
-          }
-        }
-      }
-      for (const lp of localPhotos) {
-        if (!serverPhotos.find((s) => s.fileName === lp.fileName)) {
-          photos.push(lp);
+        const blob = await fetchPhotoBlobFromServer(sp.url);
+        if (blob) {
+          photos.push({
+            id: sp.id,
+            fileName: sp.fileName,
+            fileData: blob,
+            size: sp.size,
+            type: sp.type,
+            userName: sp.userName,
+            uploadedAt: sp.uploadedAt,
+            url: sp.url,
+          });
         }
       }
 
@@ -276,31 +264,30 @@ import Navbar from "../components/Navbar.astro";
       renderPhotos();
     }
 
-    selectAll.addEventListener("change", () => {
-      if (selectAll.checked) {
-        photos.forEach((p) => selected.add(p.id));
-      } else {
+    selectAllBtn.addEventListener("click", () => {
+      const allSelected = photos.length > 0 && selected.size === photos.length;
+      if (allSelected) {
         selected.clear();
+      } else {
+        photos.forEach((p) => selected.add(p.id));
       }
       photos.forEach((p) => {
         const el = grid.querySelector(`[data-id="${p.id}"]`);
         if (el) {
-          el.classList.toggle("ring-2", selectAll.checked);
-          el.classList.toggle("ring-wedding-gold", selectAll.checked);
+          el.classList.toggle("ring-2", selected.has(p.id));
+          el.classList.toggle("ring-wedding-gold", selected.has(p.id));
           const cb = el.querySelector("input[type=checkbox]");
-          if (cb) cb.checked = selectAll.checked;
+          if (cb) cb.checked = selected.has(p.id);
         }
       });
       updateToolbar();
     });
 
     deleteSelectedBtn.addEventListener("click", async () => {
-      const count = selected.size;
-      if (!confirm(`¿Eliminar ${count} foto${count !== 1 ? "s" : ""} seleccionada${count !== 1 ? "s" : ""}?`)) return;
-      const ids = [...selected];
-      for (const id of ids) {
+      const n = selected.size;
+      if (!confirm(`¿Eliminar ${n} foto${n !== 1 ? "s" : ""} seleccionada${n !== 1 ? "s" : ""}?`)) return;
+      for (const id of [...selected]) {
         const photo = photos.find((p) => p.id === id);
-        await deletePhoto(id);
         if (photo?.url) await deletePhotoFromServer(photo.url);
       }
       await loadPhotos();
@@ -311,7 +298,6 @@ import Navbar from "../components/Navbar.astro";
       for (const photo of photos) {
         if (photo.url) await deletePhotoFromServer(photo.url);
       }
-      await deletePhotosByUser(userName);
       viewer.classList.add("hidden");
       await loadPhotos();
     });
@@ -320,7 +306,6 @@ import Navbar from "../components/Navbar.astro";
       if (!currentPhoto) return;
       if (!confirm(`¿Eliminar "${currentPhoto.fileName}"?`)) return;
       if (currentPhoto.url) await deletePhotoFromServer(currentPhoto.url);
-      await deletePhoto(currentPhoto.id);
       viewer.classList.add("hidden");
       await loadPhotos();
     });
