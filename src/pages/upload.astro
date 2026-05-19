@@ -1,0 +1,248 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+---
+
+<Layout title="Subir Fotos">
+  <Navbar />
+
+  <main class="max-w-4xl mx-auto mt-8 px-4 pb-16">
+    <h1 class="text-3xl font-bold text-center mb-2 font-serif">Sube tus Fotos</h1>
+    <p class="text-center text-gray-500 mb-8">
+      Arrastra tus fotos aquí o haz clic para seleccionarlas
+    </p>
+
+    <div
+      id="dropZone"
+      class="border-2 border-dashed border-wedding-gold/40 rounded-2xl p-12 text-center transition-all cursor-pointer hover:border-wedding-gold hover:bg-wedding-gold/5"
+    >
+      <input
+        id="fileInput"
+        type="file"
+        accept="image/*"
+        multiple
+        class="hidden"
+      />
+      <span class="text-5xl">📁</span>
+      <p class="text-lg font-medium mt-3 text-gray-600 font-serif">
+        Suelta tus fotos aquí
+      </p>
+      <p class="text-sm text-gray-400 mt-1">o haz clic para seleccionar archivos</p>
+    </div>
+
+    <div id="stats" class="hidden mt-6 flex justify-between items-center bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <span id="statsText" class="text-sm text-gray-600"></span>
+      <button
+        id="clearBtn"
+        class="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+      >
+        Limpiar completadas
+      </button>
+    </div>
+
+    <div id="validationMsg" class="hidden mt-4 p-3 rounded-xl text-sm font-medium"></div>
+
+    <div id="uploadQueue" class="mt-8 grid grid-cols-3 gap-4"></div>
+  </main>
+
+  <script type="module">
+    import { savePhoto, syncPhotoToServer } from "/js/db.js";
+
+    const userName = localStorage.getItem("wedding_user");
+    if (!userName) {
+      window.location.href = "/";
+    }
+
+    const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/bmp", "image/tiff", "image/svg+xml"];
+    const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|avif|bmp|tiff?|svg|heic|heif)$/i;
+
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const uploadQueue = document.getElementById("uploadQueue");
+    const stats = document.getElementById("stats");
+    const statsText = document.getElementById("statsText");
+    const clearBtn = document.getElementById("clearBtn");
+    const validationMsg = document.getElementById("validationMsg");
+
+    let totalUploaded = 0;
+    let totalErrors = 0;
+    let validationTimer = null;
+
+    function isValidImage(file) {
+      return IMAGE_TYPES.includes(file.type) || IMAGE_EXTENSIONS.test(file.name);
+    }
+
+    function showValidation(ok, accepted, rejected) {
+      clearTimeout(validationTimer);
+      validationMsg.classList.remove("hidden", "bg-green-50", "text-green-700", "bg-red-50", "text-red-700", "bg-yellow-50", "text-yellow-700");
+
+      if (rejected.length > 0) {
+        const names = rejected.map((f) => `"${f.name}"`).join(", ");
+        validationMsg.className = "mt-4 p-3 rounded-xl text-sm font-medium bg-yellow-50 text-yellow-700";
+        validationMsg.textContent = `Archivos ignorados (no son fotos): ${names}. Solo se aceptan imágenes (JPG, PNG, WebP, GIF, etc.).`;
+        validationTimer = setTimeout(() => validationMsg.classList.add("hidden"), 6000);
+      } else if (accepted.length > 0) {
+        validationMsg.className = "mt-4 p-3 rounded-xl text-sm font-medium bg-green-50 text-green-700";
+        validationMsg.textContent = `${accepted.length} foto${accepted.length !== 1 ? "s" : ""} válida${accepted.length !== 1 ? "s" : ""}`;
+        validationTimer = setTimeout(() => validationMsg.classList.add("hidden"), 3000);
+      }
+    }
+
+    function validateFiles(fileList) {
+      const files = Array.from(fileList);
+      const accepted = files.filter(isValidImage);
+      const rejected = files.filter((f) => !isValidImage(f));
+      showValidation(true, accepted, rejected);
+      return accepted;
+    }
+
+    function updateStats() {
+      const total = totalUploaded + totalErrors;
+      if (total > 0) {
+        stats.classList.remove("hidden");
+        statsText.textContent = `${totalUploaded} subidas exitosamente`;
+        if (totalErrors > 0) {
+          statsText.textContent += `, ${totalErrors} errores`;
+        }
+      }
+    }
+
+    function addFileToQueue(file) {
+      const id = `file-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const item = document.createElement("div");
+      item.id = id;
+      item.className =
+        "relative bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center gap-3 text-center";
+
+      const preview = document.createElement("div");
+      preview.className = "w-full h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0";
+      const img = document.createElement("img");
+      img.className = "w-full h-full object-cover";
+      img.src = URL.createObjectURL(file);
+      preview.appendChild(img);
+
+      const info = document.createElement("div");
+      info.className = "w-full";
+
+      const size = document.createElement("p");
+      size.className = "text-xs text-gray-400";
+      size.textContent = (file.size / 1024 / 1024).toFixed(2) + " MB";
+
+      const bar = document.createElement("div");
+      bar.className = "mt-2 w-full bg-gray-100 rounded-full h-2 overflow-hidden";
+      const fill = document.createElement("div");
+      fill.className =
+        "h-full bg-wedding-gold rounded-full transition-all duration-300";
+      fill.style.width = "0%";
+      bar.appendChild(fill);
+
+      const status = document.createElement("span");
+      status.className = "text-xs font-medium text-gray-400 mt-1";
+
+      info.appendChild(size);
+      info.appendChild(bar);
+      item.appendChild(preview);
+      item.appendChild(info);
+      item.appendChild(status);
+      uploadQueue.appendChild(item);
+
+      return { fill, status, id };
+    }
+
+    function updateItemStatus(itemId, fill, statusText, fillWidth) {
+      const item = document.getElementById(itemId);
+      if (item) {
+        fill.style.width = fillWidth;
+        status.textContent = statusText;
+      }
+    }
+
+    async function processFiles(files) {
+      for (const file of files) {
+        const { fill, status, id } = addFileToQueue(file);
+
+        try {
+          status.textContent = "Procesando...";
+          fill.style.width = "30%";
+
+          await new Promise((r) => setTimeout(r, 100));
+
+          fill.style.width = "60%";
+          status.textContent = "Guardando...";
+
+          await savePhoto(file, userName);
+
+          const email = localStorage.getItem("wedding_email") || "";
+          syncPhotoToServer(file, userName, email);
+
+          fill.style.width = "100%";
+          status.textContent = "Completado";
+          status.className = "text-xs font-medium text-green-600";
+
+          const check = document.createElement("span");
+          check.className = "absolute top-2 right-2 text-green-500 text-lg leading-none";
+          check.textContent = "✓";
+          const itemEl = document.getElementById(id);
+          if (itemEl) itemEl.appendChild(check);
+
+          totalUploaded++;
+
+          setTimeout(() => {
+            const item = document.getElementById(id);
+            if (item) {
+              item.classList.add("opacity-50");
+            }
+          }, 2000);
+        } catch (err) {
+          console.error("Error saving file:", file.name, err);
+          fill.style.width = "100%";
+          fill.className = "h-full bg-red-400 rounded-full transition-all duration-300";
+          status.textContent = "❌ Error";
+          status.className = "text-xs font-medium text-red-500 flex-shrink-0 min-w-16 text-right";
+          totalErrors++;
+        }
+
+        updateStats();
+      }
+    }
+
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("border-wedding-gold", "bg-wedding-gold/10");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("border-wedding-gold", "bg-wedding-gold/10");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("border-wedding-gold", "bg-wedding-gold/10");
+      const hasInvalid = Array.from(e.dataTransfer.files).some((f) => !isValidImage(f));
+      if (hasInvalid) {
+        dropZone.classList.add("border-red-400", "bg-red-50");
+        setTimeout(() => dropZone.classList.remove("border-red-400", "bg-red-50"), 1500);
+      }
+      const files = validateFiles(e.dataTransfer.files);
+      if (files.length > 0) processFiles(files);
+    });
+
+    fileInput.addEventListener("change", () => {
+      const files = validateFiles(fileInput.files);
+      if (files.length > 0) processFiles(files);
+      fileInput.value = "";
+    });
+
+    clearBtn.addEventListener("click", () => {
+      const completed = uploadQueue.querySelectorAll(".opacity-50");
+      completed.forEach((el) => el.remove());
+      if (uploadQueue.children.length === 0) {
+        stats.classList.add("hidden");
+        totalUploaded = 0;
+        totalErrors = 0;
+      }
+    });
+  </script>
+</Layout>

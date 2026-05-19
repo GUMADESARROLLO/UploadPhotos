@@ -1,0 +1,142 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+---
+
+<Layout title="Álbumes">
+  <Navbar />
+
+  <main class="max-w-6xl mx-auto mt-8 px-4 pb-16">
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-bold font-serif">Álbumes de los Invitados</h1>
+      <p class="text-gray-500 mt-2">Todas las fotos organizadas por persona</p>
+    </div>
+
+    <div id="albumsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="col-span-full text-center py-20 text-gray-400">
+        <span class="text-4xl">🔄</span>
+        <p class="mt-3 font-serif">Cargando álbumes...</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { getAllUsers, getPhotosByUser, fetchUsersFromServer, fetchPhotosFromServer, fetchPhotoBlobFromServer } from "/js/db.js";
+
+    const container = document.getElementById("albumsContainer");
+
+    async function loadAlbums() {
+      const localUsers = await getAllUsers();
+      const serverUsers = await fetchUsersFromServer();
+
+      const serverUserMap = {};
+      serverUsers.forEach((u) => { serverUserMap[u.userName] = u; });
+
+      const mergedUsers = [...new Set([...localUsers.map((u) => u.userName), ...serverUsers.map((u) => u.userName)])];
+
+      if (mergedUsers.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-20 text-gray-400">
+            <span class="text-4xl">📸</span>
+            <p class="mt-3 text-lg font-medium font-serif">Aún no hay fotos</p>
+            <p class="text-sm mt-1">Sé el primero en subir tus fotos</p>
+            <a href="/upload" class="inline-block mt-4 px-6 py-2.5 bg-wedding-gold text-wedding-dark font-medium rounded-xl hover:bg-wedding-gold/90 transition-colors">
+              Subir Fotos
+            </a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = "";
+
+      for (const userName of mergedUsers) {
+        const localPhotos = await getPhotosByUser(userName);
+        const serverPhotos = await fetchPhotosFromServer(userName);
+
+        const localPhotoMap = {};
+        localPhotos.forEach((p) => { localPhotoMap[p.fileName] = p; });
+        const allPhotos = [];
+
+        for (const sp of serverPhotos) {
+          if (localPhotoMap[sp.fileName]) {
+            allPhotos.push(localPhotoMap[sp.fileName]);
+          } else {
+            const blob = await fetchPhotoBlobFromServer(sp.url);
+            if (blob) {
+              allPhotos.push({
+                id: sp.id,
+                fileName: sp.fileName,
+                fileData: blob,
+                size: sp.size,
+                type: sp.type,
+                userName: sp.userName,
+                uploadedAt: sp.uploadedAt,
+              });
+            }
+          }
+        }
+        for (const lp of localPhotos) {
+          if (!serverPhotos.find((s) => s.fileName === lp.fileName)) {
+            allPhotos.push(lp);
+          }
+        }
+        const card = document.createElement("div");
+        card.className =
+          "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow";
+
+        const photoGrid = document.createElement("div");
+        photoGrid.className = "grid grid-cols-3 gap-1 p-1";
+
+        const previewPhotos = allPhotos.slice(-6);
+        for (const photo of previewPhotos) {
+          const imgWrapper = document.createElement("div");
+          imgWrapper.className = "aspect-square overflow-hidden bg-gray-100 rounded";
+          const img = document.createElement("img");
+          img.className = "w-full h-full object-cover";
+          img.src = URL.createObjectURL(photo.fileData);
+          imgWrapper.appendChild(img);
+          photoGrid.appendChild(imgWrapper);
+        }
+
+        for (let i = previewPhotos.length; i < 6; i++) {
+          const placeholder = document.createElement("div");
+          placeholder.className = "aspect-square bg-gray-50 rounded flex items-center justify-center text-gray-300 text-2xl";
+          placeholder.textContent = "📷";
+          photoGrid.appendChild(placeholder);
+        }
+
+        const info = document.createElement("div");
+        info.className = "p-4";
+
+        const nameEl = document.createElement("h3");
+        nameEl.className = "text-lg font-semibold text-wedding-dark font-serif";
+        nameEl.textContent = userName;
+
+        const count = document.createElement("p");
+        count.className = "text-sm text-gray-500 mt-1";
+        count.textContent = `${allPhotos.length} foto${allPhotos.length !== 1 ? "s" : ""}`;
+
+        const viewBtn = document.createElement("a");
+        viewBtn.href = `/album?user=${encodeURIComponent(userName)}`;
+        viewBtn.className =
+          "inline-block mt-3 px-4 py-2 bg-wedding-gold/10 text-wedding-dark text-sm font-medium rounded-lg hover:bg-wedding-gold/20 transition-colors";
+        viewBtn.textContent = "Ver Álbum";
+
+        info.appendChild(nameEl);
+        info.appendChild(count);
+        info.appendChild(viewBtn);
+
+        card.appendChild(photoGrid);
+        card.appendChild(info);
+        container.appendChild(card);
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", loadAlbums);
+    } else {
+      loadAlbums();
+    }
+  </script>
+</Layout>

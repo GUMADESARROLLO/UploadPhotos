@@ -1,0 +1,166 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+---
+
+<Layout title="Inicio">
+  <Navbar />
+
+  <main class="max-w-lg mx-auto mt-20 px-4">
+    <div class="text-center mb-10">
+      <span class="text-6xl">💍</span>
+      <h1 class="text-4xl font-bold mt-4 text-wedding-dark font-serif">
+        Álbum Compartido de Boda
+      </h1>
+      <p class="text-gray-600 mt-3 text-lg">
+        Sube y comparte todas tus fotos de la boda con todos los invitados
+      </p>
+    </div>
+
+    <div id="step1" class="bg-white rounded-2xl shadow-xl p-8 border border-wedding-rose/20">
+      <h2 class="text-xl font-semibold mb-2 font-serif">Ingresa tu correo</h2>
+      <p class="text-sm text-gray-500 mb-6">
+        Si ya has subido fotos antes, te reconoceremos automáticamente
+      </p>
+
+      <form id="emailForm" class="flex flex-col gap-4">
+        <input
+          id="emailInput"
+          type="email"
+          placeholder="tucorreo@ejemplo.com"
+          required
+          autocomplete="email"
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-wedding-gold focus:ring-2 focus:ring-wedding-gold/20 outline-none transition-all text-lg"
+        />
+        <div id="emailError" class="hidden text-sm text-red-500"></div>
+        <button
+          type="submit"
+          id="emailBtn"
+          class="w-full bg-wedding-gold text-wedding-dark font-semibold py-3.5 rounded-xl hover:bg-wedding-gold/90 transition-all text-lg cursor-pointer"
+        >
+          Continuar
+        </button>
+      </form>
+    </div>
+
+    <div id="step2" class="hidden bg-white rounded-2xl shadow-xl p-8 border border-wedding-rose/20">
+      <h2 class="text-xl font-semibold mb-2 font-serif">¿Cómo te llamas?</h2>
+      <p class="text-sm text-gray-500 mb-6">
+        Es la primera vez que usas este correo. Cuéntanos tu nombre para crear tu álbum
+      </p>
+
+      <form id="nameForm" class="flex flex-col gap-4">
+        <p id="step2Email" class="text-sm text-wedding-gold font-medium"></p>
+        <input
+          id="userNameInput"
+          type="text"
+          placeholder="Escribe tu nombre..."
+          required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-wedding-gold focus:ring-2 focus:ring-wedding-gold/20 outline-none transition-all text-lg"
+        />
+        <button
+          type="submit"
+          class="w-full bg-wedding-gold text-wedding-dark font-semibold py-3.5 rounded-xl hover:bg-wedding-gold/90 transition-all text-lg cursor-pointer"
+        >
+          Entrar al Álbum
+        </button>
+      </form>
+    </div>
+
+    <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+      <div class="p-4">
+        <span class="text-3xl">📸</span>
+        <h3 class="font-semibold mt-2 font-serif">Sube tus Fotos</h3>
+        <p class="text-sm text-gray-500 mt-1">Arrastra y suelta todas las fotos que tengas</p>
+      </div>
+      <div class="p-4">
+        <span class="text-3xl">📂</span>
+        <h3 class="font-semibold mt-2 font-serif">Álbumes por Persona</h3>
+        <p class="text-sm text-gray-500 mt-1">Cada invitado tiene su propio álbum</p>
+      </div>
+      <div class="p-4">
+        <span class="text-3xl">📡</span>
+        <h3 class="font-semibold mt-2 font-serif">Funciona Offline</h3>
+        <p class="text-sm text-gray-500 mt-1">Sin conexión a internet no hay problema</p>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { findUserByEmail, createUser } from "/js/db.js";
+
+    const storedEmail = localStorage.getItem("wedding_email");
+    if (storedEmail) {
+      window.location.href = "/upload";
+    }
+
+    const step1 = document.getElementById("step1");
+    const step2 = document.getElementById("step2");
+    const emailForm = document.getElementById("emailForm");
+    const emailInput = document.getElementById("emailInput");
+    const emailError = document.getElementById("emailError");
+    const emailBtn = document.getElementById("emailBtn");
+    const nameForm = document.getElementById("nameForm");
+    const userNameInput = document.getElementById("userNameInput");
+    const step2Email = document.getElementById("step2Email");
+
+    let currentEmail = "";
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    emailForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!isValidEmail(email)) {
+        emailError.textContent = "Ingresa un correo electrónico válido";
+        emailError.classList.remove("hidden");
+        return;
+      }
+
+      emailError.classList.add("hidden");
+      emailBtn.disabled = true;
+      emailBtn.textContent = "Verificando...";
+      currentEmail = email;
+
+      try {
+        const user = await findUserByEmail(email);
+
+        if (user) {
+          localStorage.setItem("wedding_user", user.userName);
+          localStorage.setItem("wedding_email", email);
+          window.location.href = "/upload";
+        } else {
+          step1.classList.add("hidden");
+          step2.classList.remove("hidden");
+          step2Email.textContent = `Correo: ${email}`;
+          userNameInput.focus();
+        }
+      } catch (err) {
+        emailError.textContent = "Error al verificar. Intenta de nuevo.";
+        emailError.classList.remove("hidden");
+      }
+
+      emailBtn.disabled = false;
+      emailBtn.textContent = "Continuar";
+    });
+
+    nameForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = userNameInput.value.trim();
+      if (!name) return;
+
+      try {
+        await createUser(name, currentEmail);
+        localStorage.setItem("wedding_user", name);
+        localStorage.setItem("wedding_email", currentEmail);
+        window.location.href = "/upload";
+      } catch (err) {
+        emailError.textContent = "Error al crear usuario. Intenta de nuevo.";
+        emailError.classList.remove("hidden");
+      }
+    });
+  </script>
+</Layout>

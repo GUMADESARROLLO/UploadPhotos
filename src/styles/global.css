@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  --color-wedding-gold: #c27e5c;
+  --color-wedding-rose: #e6b8a2;
+  --color-wedding-cream: #fef9f5;
+  --color-wedding-dark: #4a3b32;
+  --color-wedding-ink: #2c1810;
+  --color-wedding-italic: #5a4a3e;
+  --color-wedding-gratitude: #7a6b5e;
+  --color-wedding-author: #b15e3a;
+  --color-wedding-error: #c0392b;
+  --color-wedding-photo-border: #f0dbcf;
+  --color-wedding-footer: #e6d5cc;
+}

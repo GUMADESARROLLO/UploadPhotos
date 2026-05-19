@@ -1,0 +1,349 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+---
+
+<Layout title="Álbum">
+  <Navbar />
+
+  <main class="max-w-6xl mx-auto mt-8 px-4 pb-16">
+    <a href="/albums" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-wedding-dark mb-6 transition-colors">
+      ← Volver a Álbumes
+    </a>
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h1 id="albumTitle" class="text-3xl font-bold font-serif">Álbum</h1>
+        <p id="photoCount" class="text-gray-500 mt-1"></p>
+      </div>
+
+      <div id="toolbar" class="hidden items-center gap-3 flex-wrap">
+        <label class="flex items-center gap-2 text-sm cursor-pointer select-none bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors">
+          <input type="checkbox" id="selectAll" class="w-4 h-4 accent-wedding-gold cursor-pointer" />
+          Seleccionar todo
+        </label>
+        <button id="deleteSelectedBtn" class="text-sm px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
+          Eliminar seleccionadas
+        </button>
+        <button id="deleteAlbumBtn" class="text-sm px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer">
+          Eliminar álbum
+        </button>
+      </div>
+    </div>
+
+    <div id="photoGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div class="col-span-full text-center py-20 text-gray-400">
+        <span class="text-4xl">🔄</span>
+        <p class="mt-3 font-serif">Cargando fotos...</p>
+      </div>
+    </div>
+  </main>
+
+  <div id="viewer" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <button id="closeViewer" class="absolute top-4 right-4 text-white text-4xl hover:opacity-70 cursor-pointer z-10">&times;</button>
+    <div class="flex flex-col xl:flex-row gap-4 max-w-5xl w-full max-h-[90vh] items-center">
+      <div class="flex-1 min-w-0 flex items-center justify-center bg-black/40 rounded-xl overflow-hidden max-h-[70vh] xl:max-h-[85vh]">
+        <img id="viewerImg" class="max-w-full max-h-full object-contain" />
+      </div>
+      <div id="detailPanel" class="bg-white rounded-xl p-6 w-full xl:w-80 shrink-0 space-y-4 max-h-[70vh] xl:max-h-[85vh] overflow-y-auto">
+        <div id="detailPreview" class="w-full aspect-video rounded-lg overflow-hidden bg-gray-100 xl:hidden mb-2">
+          <img id="detailThumb" class="w-full h-full object-cover" />
+        </div>
+        <h3 class="font-semibold text-lg text-wedding-dark font-serif">Detalles de la Foto</h3>
+        <div class="space-y-3 text-sm">
+          <div>
+            <span class="text-gray-400 block text-xs uppercase tracking-wide">Archivo</span>
+            <span id="detailFileName" class="font-medium break-all"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block text-xs uppercase tracking-wide">Tamaño</span>
+            <span id="detailFileSize" class="font-medium"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block text-xs uppercase tracking-wide">Dimensiones</span>
+            <span id="detailDimensions" class="font-medium"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block text-xs uppercase tracking-wide">Subida</span>
+            <span id="detailDate" class="font-medium"></span>
+          </div>
+          <div>
+            <span class="text-gray-400 block text-xs uppercase tracking-wide">Subido por</span>
+            <span id="detailUser" class="font-medium"></span>
+          </div>
+        </div>
+        <a id="downloadBtn" download class="block w-full text-center px-4 py-2.5 bg-wedding-gold text-wedding-dark font-medium rounded-lg hover:bg-wedding-gold/90 transition-colors cursor-pointer">
+          Descargar Foto
+        </a>
+        <button id="deleteSingleBtn" class="block w-full text-center px-4 py-2.5 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors cursor-pointer">
+          Eliminar Foto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getPhotosByUser, deletePhoto, deletePhotosByUser, fetchPhotosFromServer, fetchPhotoBlobFromServer, deletePhotoFromServer } from "/js/db.js";
+
+    const params = new URLSearchParams(window.location.search);
+    const userName = params.get("user");
+
+    if (!userName) {
+      window.location.href = "/albums";
+    }
+
+    const title = document.getElementById("albumTitle");
+    const count = document.getElementById("photoCount");
+    const grid = document.getElementById("photoGrid");
+    const toolbar = document.getElementById("toolbar");
+    const selectAll = document.getElementById("selectAll");
+    const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
+    const deleteAlbumBtn = document.getElementById("deleteAlbumBtn");
+    const viewer = document.getElementById("viewer");
+    const viewerImg = document.getElementById("viewerImg");
+    const detailThumb = document.getElementById("detailThumb");
+    const detailFileName = document.getElementById("detailFileName");
+    const detailFileSize = document.getElementById("detailFileSize");
+    const detailDimensions = document.getElementById("detailDimensions");
+    const detailDate = document.getElementById("detailDate");
+    const detailUser = document.getElementById("detailUser");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const deleteSingleBtn = document.getElementById("deleteSingleBtn");
+    const closeViewer = document.getElementById("closeViewer");
+
+    let photos = [];
+    let selected = new Set();
+    let currentPhoto = null;
+
+    title.textContent = `Álbum de ${userName}`;
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / 1048576).toFixed(2) + " MB";
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString("es-ES", {
+        year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    }
+
+    function getDimensions(blob) {
+      return new Promise((resolve) => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          resolve(img.naturalWidth + " × " + img.naturalHeight + " px");
+          URL.revokeObjectURL(url);
+        };
+        img.onerror = () => resolve("Desconocido");
+        img.src = url;
+      });
+    }
+
+    function updateToolbar() {
+      deleteSelectedBtn.disabled = selected.size === 0;
+      deleteSelectedBtn.textContent = `Eliminar (${selected.size})`;
+      selectAll.checked = photos.length > 0 && selected.size === photos.length;
+    }
+
+    function selectPhoto(id) {
+      if (selected.has(id)) selected.delete(id);
+      else selected.add(id);
+      const el = grid.querySelector(`[data-id="${id}"]`);
+      if (el) el.classList.toggle("ring-2", selected.has(id));
+      if (el) el.classList.toggle("ring-wedding-gold", selected.has(id));
+      updateToolbar();
+    }
+
+    async function showDetails(photo) {
+      currentPhoto = photo;
+      viewer.classList.remove("hidden");
+      viewerImg.src = URL.createObjectURL(photo.fileData);
+      detailThumb.src = URL.createObjectURL(photo.fileData);
+      detailFileName.textContent = photo.fileName;
+      detailFileSize.textContent = formatSize(photo.size);
+      detailDate.textContent = formatDate(photo.uploadedAt);
+      detailUser.textContent = photo.userName;
+      detailDimensions.textContent = "Calculando...";
+      downloadBtn.href = URL.createObjectURL(photo.fileData);
+      downloadBtn.download = photo.fileName;
+
+      getDimensions(photo.fileData).then((dims) => {
+        detailDimensions.textContent = dims;
+      });
+    }
+
+    function renderPhotos() {
+      if (photos.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-20 text-gray-400">
+            <span class="text-4xl">📸</span>
+            <p class="mt-3 text-lg font-medium font-serif">Este álbum está vacío</p>
+            <a href="/upload" class="inline-block mt-4 px-6 py-2.5 bg-wedding-gold text-wedding-dark font-medium rounded-xl hover:bg-wedding-gold/90 transition-colors">
+              Subir Fotos
+            </a>
+          </div>
+        `;
+        toolbar.classList.add("hidden");
+        return;
+      }
+
+      toolbar.classList.remove("hidden");
+      count.textContent = `${photos.length} foto${photos.length !== 1 ? "s" : ""}`;
+      grid.innerHTML = "";
+
+      for (const photo of photos) {
+        const item = document.createElement("div");
+        item.className =
+          "aspect-square overflow-hidden rounded-xl bg-gray-100 cursor-pointer group relative";
+        item.dataset.id = photo.id;
+        if (selected.has(photo.id)) {
+          item.classList.add("ring-2", "ring-wedding-gold");
+        }
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = selected.has(photo.id);
+        cb.className =
+          "absolute top-2 left-2 z-10 w-5 h-5 accent-wedding-gold cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity";
+        cb.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectPhoto(photo.id);
+        });
+
+        const img = document.createElement("img");
+        img.className =
+          "w-full h-full object-cover transition-transform group-hover:scale-105 duration-300";
+        img.src = URL.createObjectURL(photo.fileData);
+        img.loading = "lazy";
+
+        const overlay = document.createElement("div");
+        overlay.className =
+          "absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-end p-3";
+
+        const info = document.createElement("div");
+        info.className = "text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity";
+        info.textContent = formatDate(photo.uploadedAt);
+
+        overlay.appendChild(info);
+        item.appendChild(cb);
+        item.appendChild(img);
+        item.appendChild(overlay);
+
+        item.addEventListener("click", (e) => {
+          if (e.target.closest('[data-id]') === item) {
+            showDetails(photo);
+          }
+        });
+
+        grid.appendChild(item);
+      }
+      updateToolbar();
+    }
+
+    async function loadPhotos() {
+      const localPhotos = await getPhotosByUser(userName);
+      const serverPhotos = await fetchPhotosFromServer(userName);
+
+      const localMap = {};
+      localPhotos.forEach((p) => { localMap[p.fileName] = p; });
+      photos = [];
+
+      for (const sp of serverPhotos) {
+        if (localMap[sp.fileName]) {
+          const local = localMap[sp.fileName];
+          local.url = sp.url;
+          photos.push(local);
+        } else {
+          const blob = await fetchPhotoBlobFromServer(sp.url);
+          if (blob) {
+            photos.push({
+              id: sp.id,
+              fileName: sp.fileName,
+              fileData: blob,
+              size: sp.size,
+              type: sp.type,
+              userName: sp.userName,
+              uploadedAt: sp.uploadedAt,
+              url: sp.url,
+            });
+          }
+        }
+      }
+      for (const lp of localPhotos) {
+        if (!serverPhotos.find((s) => s.fileName === lp.fileName)) {
+          photos.push(lp);
+        }
+      }
+
+      selected.clear();
+      renderPhotos();
+    }
+
+    selectAll.addEventListener("change", () => {
+      if (selectAll.checked) {
+        photos.forEach((p) => selected.add(p.id));
+      } else {
+        selected.clear();
+      }
+      photos.forEach((p) => {
+        const el = grid.querySelector(`[data-id="${p.id}"]`);
+        if (el) {
+          el.classList.toggle("ring-2", selectAll.checked);
+          el.classList.toggle("ring-wedding-gold", selectAll.checked);
+          const cb = el.querySelector("input[type=checkbox]");
+          if (cb) cb.checked = selectAll.checked;
+        }
+      });
+      updateToolbar();
+    });
+
+    deleteSelectedBtn.addEventListener("click", async () => {
+      const count = selected.size;
+      if (!confirm(`¿Eliminar ${count} foto${count !== 1 ? "s" : ""} seleccionada${count !== 1 ? "s" : ""}?`)) return;
+      const ids = [...selected];
+      for (const id of ids) {
+        const photo = photos.find((p) => p.id === id);
+        await deletePhoto(id);
+        if (photo?.url) await deletePhotoFromServer(photo.url);
+      }
+      await loadPhotos();
+    });
+
+    deleteAlbumBtn.addEventListener("click", async () => {
+      if (!confirm(`¿Eliminar todo el álbum de ${userName} (${photos.length} fotos)? Esta acción no se puede deshacer.`)) return;
+      for (const photo of photos) {
+        if (photo.url) await deletePhotoFromServer(photo.url);
+      }
+      await deletePhotosByUser(userName);
+      viewer.classList.add("hidden");
+      await loadPhotos();
+    });
+
+    deleteSingleBtn.addEventListener("click", async () => {
+      if (!currentPhoto) return;
+      if (!confirm(`¿Eliminar "${currentPhoto.fileName}"?`)) return;
+      if (currentPhoto.url) await deletePhotoFromServer(currentPhoto.url);
+      await deletePhoto(currentPhoto.id);
+      viewer.classList.add("hidden");
+      await loadPhotos();
+    });
+
+    closeViewer.addEventListener("click", () => viewer.classList.add("hidden"));
+    viewer.addEventListener("click", (e) => {
+      if (e.target === viewer) viewer.classList.add("hidden");
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") viewer.classList.add("hidden");
+    });
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", loadPhotos);
+    } else {
+      loadPhotos();
+    }
+  </script>
+</Layout>

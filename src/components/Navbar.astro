@@ -1,0 +1,55 @@
+<nav class="bg-wedding-ink text-wedding-cream px-6 py-4 shadow-lg">
+  <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <span class="text-2xl">💍</span>
+      <span class="text-xl font-semibold tracking-wide font-serif">Álbum de Boda</span>
+    </a>
+
+    <div class="flex items-center gap-6">
+      <span id="welcomeUser" class="text-wedding-gold text-sm font-medium hidden"></span>
+      <div class="flex items-center gap-4 text-sm font-medium">
+        <a
+          href="/upload"
+          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold"
+          id="navUpload"
+        >
+          Subir Fotos
+        </a>
+        <a
+          href="/albums"
+          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold"
+          id="navAlbums"
+        >
+          Álbumes
+        </a>
+        <button
+          id="logoutBtn"
+          class="px-3 py-1.5 rounded transition-colors text-red-300 hover:text-red-200 hover:bg-red-900/30 cursor-pointer hidden"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const userName = localStorage.getItem("wedding_user");
+    const userEmail = localStorage.getItem("wedding_email");
+    if (userName) {
+      const el = document.getElementById("welcomeUser");
+      el.textContent = userName + (userEmail ? " · " + userEmail : "");
+      el.classList.remove("hidden");
+      document.getElementById("logoutBtn").classList.remove("hidden");
+    }
+    const path = window.location.pathname;
+    if (path === "/upload") {
+      document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
+    } else if (path === "/albums") {
+      document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
+    }
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("wedding_user");
+      localStorage.removeItem("wedding_email");
+      window.location.href = "/";
+    });
+  </script>
+</nav>
