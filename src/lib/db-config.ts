@@ -10,11 +10,11 @@ function getEnv(key: string, fallback: string): string {
 export function getPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool({
-      host: getEnv("MYSQL_HOST", "localhost"),
-      port: parseInt(getEnv("MYSQL_PORT", "3306"), 10),
-      user: getEnv("MYSQL_USER", "root"),
-      password: getEnv("MYSQL_PASSWORD", ""),
-      database: getEnv("MYSQL_DATABASE", "wedding_photos"),
+      host: getEnv("MYSQL_HOST", "") || getEnv("DB_HOST", "localhost"),
+      port: parseInt(getEnv("MYSQL_PORT", "") || getEnv("DB_PORT", "3306"), 10),
+      user: getEnv("MYSQL_USER", "") || getEnv("DB_USER", "root"),
+      password: getEnv("MYSQL_PASSWORD", "") || getEnv("DB_PASSWORD", ""),
+      database: getEnv("MYSQL_DATABASE", "") || getEnv("DB_NAME", "wedding_photos"),
       waitForConnections: true,
       connectionLimit: 5,
     });
