@@ -30,6 +30,9 @@ export const GET: APIRoute = async ({ params }) => {
       ".svg": "image/svg+xml",
       ".heic": "image/heic",
       ".heif": "image/heif",
+      ".mp4": "video/mp4",
+      ".webm": "video/webm",
+      ".mov": "video/quicktime",
     };
     const contentType = mimeMap[ext] || "application/octet-stream";
 

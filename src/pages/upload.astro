@@ -3,13 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 ---
 
-<Layout title="Subir Fotos">
+<Layout title="Subir Fotos y Videos">
   <Navbar />
 
   <main class="max-w-4xl mx-auto mt-8 px-4 pb-16">
-    <h1 class="text-3xl font-bold text-center mb-2 font-serif">Sube tus Fotos</h1>
+    <h1 class="text-3xl font-bold text-center mb-2 font-serif">Sube tus Fotos y Videos</h1>
     <p class="text-center text-gray-500 mb-8">
-      Arrastra tus fotos aquí o haz clic para seleccionarlas
+      Arrastra tus fotos y videos aquí o haz clic para seleccionarlos
     </p>
 
     <div
@@ -19,13 +19,13 @@ import Navbar from "../components/Navbar.astro";
       <input
         id="fileInput"
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         class="hidden"
       />
       <span class="text-5xl">📁</span>
       <p class="text-lg font-medium mt-3 text-gray-600 font-serif">
-        Suelta tus fotos aquí
+        Suelta tus fotos y videos aquí
       </p>
       <p class="text-sm text-gray-400 mt-1">o haz clic para seleccionar archivos</p>
     </div>
@@ -54,8 +54,8 @@ import Navbar from "../components/Navbar.astro";
       window.location.href = "/";
     }
 
-    const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/bmp", "image/tiff", "image/svg+xml", "image/heic", "image/heif"];
-    const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|avif|bmp|tiff?|svg|heic|heif)$/i;
+    const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/bmp", "image/tiff", "image/svg+xml", "image/heic", "image/heif", "video/mp4", "video/webm", "video/quicktime"];
+    const ACCEPTED_EXTENSIONS = /\.(jpg|jpeg|png|webp|gif|avif|bmp|tiff?|svg|heic|heif|mp4|webm|mov)$/i;
 
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileInput");
@@ -69,12 +69,16 @@ import Navbar from "../components/Navbar.astro";
     let totalErrors = 0;
     let validationTimer = null;
 
-    function isValidImage(file) {
-      return IMAGE_TYPES.includes(file.type) || IMAGE_EXTENSIONS.test(file.name);
+    function isValidFile(file) {
+      return ACCEPTED_TYPES.includes(file.type) || ACCEPTED_EXTENSIONS.test(file.name);
     }
 
     function isHeicFile(file) {
       return /\.(heic|heif|heics|heifs)$/i.test(file.name) || file.type === "image/heic" || file.type === "image/heif";
+    }
+
+    function isVideoFile(file) {
+      return /\.(mp4|webm|mov)$/i.test(file.name) || file.type.startsWith("video/");
     }
 
     function showValidation(ok, accepted, rejected) {
@@ -84,19 +88,19 @@ import Navbar from "../components/Navbar.astro";
       if (rejected.length > 0) {
         const names = rejected.map((f) => `"${f.name}"`).join(", ");
         validationMsg.className = "mt-4 p-3 rounded-xl text-sm font-medium bg-yellow-50 text-yellow-700";
-        validationMsg.textContent = `Archivos ignorados (no son fotos): ${names}. Solo se aceptan imágenes (JPG, PNG, WebP, GIF, etc.).`;
+        validationMsg.textContent = `Archivos ignorados: ${names}. Solo se aceptan imágenes y videos (JPG, PNG, WebP, MP4, etc.).`;
         validationTimer = setTimeout(() => validationMsg.classList.add("hidden"), 6000);
       } else if (accepted.length > 0) {
         validationMsg.className = "mt-4 p-3 rounded-xl text-sm font-medium bg-green-50 text-green-700";
-        validationMsg.textContent = `${accepted.length} foto${accepted.length !== 1 ? "s" : ""} válida${accepted.length !== 1 ? "s" : ""}`;
+        validationMsg.textContent = `${accepted.length} archivo${accepted.length !== 1 ? "s" : ""} válido${accepted.length !== 1 ? "s" : ""}`;
         validationTimer = setTimeout(() => validationMsg.classList.add("hidden"), 3000);
       }
     }
 
     function validateFiles(fileList) {
       const files = Array.from(fileList);
-      const accepted = files.filter(isValidImage);
-      const rejected = files.filter((f) => !isValidImage(f));
+      const accepted = files.filter(isValidFile);
+      const rejected = files.filter((f) => !isValidFile(f));
       showValidation(true, accepted, rejected);
       return accepted;
     }
@@ -123,6 +127,8 @@ import Navbar from "../components/Navbar.astro";
       preview.className = "w-full h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center";
       if (isHeicFile(file)) {
         preview.innerHTML = `<span class="text-3xl opacity-40">🖼</span><span class="text-xs text-gray-400 ml-1">HEIC</span>`;
+      } else if (isVideoFile(file)) {
+        preview.innerHTML = `<span class="text-3xl opacity-40">🎬</span><span class="text-xs text-gray-400 ml-1 uppercase">${file.name.split('.').pop()}</span>`;
       } else {
         const img = document.createElement("img");
         img.className = "w-full h-full object-cover";
@@ -243,7 +249,7 @@ import Navbar from "../components/Navbar.astro";
     dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
       dropZone.classList.remove("border-wedding-gold", "bg-wedding-gold/10");
-      const hasInvalid = Array.from(e.dataTransfer.files).some((f) => !isValidImage(f));
+      const hasInvalid = Array.from(e.dataTransfer.files).some((f) => !isValidFile(f));
       if (hasInvalid) {
         dropZone.classList.add("border-red-400", "bg-red-50");
         setTimeout(() => dropZone.classList.remove("border-red-400", "bg-red-50"), 1500);
