@@ -73,6 +73,10 @@ import Navbar from "../components/Navbar.astro";
       return IMAGE_TYPES.includes(file.type) || IMAGE_EXTENSIONS.test(file.name);
     }
 
+    function isHeicFile(file) {
+      return /\.(heic|heif|heics|heifs)$/i.test(file.name) || file.type === "image/heic" || file.type === "image/heif";
+    }
+
     function showValidation(ok, accepted, rejected) {
       clearTimeout(validationTimer);
       validationMsg.classList.remove("hidden", "bg-green-50", "text-green-700", "bg-red-50", "text-red-700", "bg-yellow-50", "text-yellow-700");
@@ -116,11 +120,15 @@ import Navbar from "../components/Navbar.astro";
         "relative bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col items-center gap-3 text-center";
 
       const preview = document.createElement("div");
-      preview.className = "w-full h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0";
-      const img = document.createElement("img");
-      img.className = "w-full h-full object-cover";
-      img.src = URL.createObjectURL(file);
-      preview.appendChild(img);
+      preview.className = "w-full h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center";
+      if (isHeicFile(file)) {
+        preview.innerHTML = `<span class="text-3xl opacity-40">🖼</span><span class="text-xs text-gray-400 ml-1">HEIC</span>`;
+      } else {
+        const img = document.createElement("img");
+        img.className = "w-full h-full object-cover";
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+      }
 
       const info = document.createElement("div");
       info.className = "w-full";
@@ -164,15 +172,31 @@ import Navbar from "../components/Navbar.astro";
 
         try {
           status.textContent = "Procesando...";
-          fill.style.width = "30%";
+          fill.style.width = "20%";
 
-          await new Promise((r) => setTimeout(r, 100));
+          let uploadFile = file;
+
+          if (isHeicFile(file)) {
+            status.textContent = "Convirtiendo HEIC a WebP...";
+            fill.style.width = "40%";
+            try {
+              await import("/js/heic2any.js");
+              const heic2any = window.heic2any;
+              const result = await heic2any({ blob: file, toType: "image/webp", quality: 0.95 });
+              const blob = Array.isArray(result) ? result[0] : result;
+              const webpName = file.name.replace(/\.(heic|heif|heics|heifs)$/i, ".webp");
+              uploadFile = new File([blob], webpName, { type: "image/webp" });
+            } catch (convErr) {
+              console.error("HEIC conversion error, uploading original:", convErr);
+            }
+            fill.style.width = "60%";
+          }
 
           fill.style.width = "60%";
           status.textContent = "Subiendo al servidor...";
 
           const email = localStorage.getItem("wedding_email") || "";
-          await uploadPhotoToServer(file, userName, email, guestId);
+          await uploadPhotoToServer(uploadFile, userName, email, guestId);
 
           fill.style.width = "100%";
           status.textContent = "Completado";

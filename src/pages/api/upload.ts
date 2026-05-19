@@ -2,17 +2,9 @@ import type { APIRoute } from "astro";
 import fs from "node:fs/promises";
 import path from "node:path";
 import mysql from "mysql2/promise";
-import sharp from "sharp";
 import { getPool, initDb } from "../../lib/db-config";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-
-const HEIC_EXTS = [".heic", ".heif", ".heics", ".heifs"];
-
-function isHeic(filename: string, mimeType: string): boolean {
-  const ext = path.extname(filename).toLowerCase();
-  return HEIC_EXTS.includes(ext) || mimeType === "image/heic" || mimeType === "image/heif";
-}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -32,26 +24,14 @@ export const POST: APIRoute = async ({ request }) => {
     const userDir = path.join(UPLOADS_DIR, folderName);
     await fs.mkdir(userDir, { recursive: true });
 
-    let safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    let buffer = Buffer.from(await file.arrayBuffer());
-    let fileType = file.type;
-
-    if (isHeic(file.name, file.type)) {
-      try {
-        buffer = await sharp(buffer).jpeg({ quality: 90 }).toBuffer();
-        fileType = "image/jpeg";
-        safeName = safeName.replace(/\.(heic|heif|heics|heifs)$/i, ".jpg");
-      } catch (convErr) {
-        console.error("HEIC conversion error:", convErr);
-      }
-    }
-
+    const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
     const filePath = path.join(userDir, safeName);
     await fs.writeFile(filePath, buffer);
 
     const [result] = await pool.execute<mysql.ResultSetHeader>(
       "INSERT INTO photos (guestId, folderName, fileName, storedName, size, type, userName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [parseInt(guestId), folderName, file.name, safeName, file.size, fileType, userName, email || ""]
+      [parseInt(guestId), folderName, file.name, safeName, file.size, file.type, userName, email || ""]
     );
 
     const insertId = (result as mysql.ResultSetHeader).insertId;
@@ -61,7 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
       fileName: file.name,
       storedName: safeName,
       size: file.size,
-      type: fileType,
+      type: file.type,
       userName,
       email: email || "",
       uploadedAt: new Date().toISOString(),

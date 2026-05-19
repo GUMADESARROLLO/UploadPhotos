@@ -1,44 +1,75 @@
-<nav class="bg-wedding-ink text-wedding-cream px-6 py-4 shadow-lg">
-  <div class="max-w-6xl mx-auto flex items-center justify-between">
-    <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-      <span class="text-2xl">💍</span>
-      <span class="text-xl font-semibold tracking-wide font-serif">Álbum de Boda</span>
-    </a>
-
-    <div class="flex items-center gap-4 text-sm font-medium">
-      <a
-        href="/upload"
-        class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
-        id="navUpload"
-      >
-        Subir Fotos
-      </a>
-      <a
-        href="/albums"
-        class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
-        id="navAlbums"
-      >
-        Álbum
+<nav class="bg-wedding-ink text-wedding-cream shadow-lg">
+  <div class="max-w-6xl mx-auto px-4 lg:px-6">
+    <div class="flex items-center justify-between h-14 lg:h-16">
+      <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0">
+        <span class="text-xl lg:text-2xl shrink-0">💍</span>
+        <span class="text-base lg:text-xl font-semibold tracking-wide font-serif truncate">Álbum de Boda</span>
       </a>
 
-      <div id="userDropdown" class="relative hidden">
-        <button id="dropdownTrigger" class="flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:bg-white/10 cursor-pointer text-left">
-          <div class="min-w-0">
-            <div id="dropdownName" class="text-wedding-gold font-medium text-sm leading-tight truncate max-w-[140px]"></div>
-            <div id="dropdownEmail" class="text-wedding-cream/50 text-xs leading-tight truncate max-w-[140px]"></div>
+      <div class="flex items-center gap-1 lg:gap-3">
+        <div class="hidden lg:flex items-center gap-1 text-sm font-medium">
+          <a href="/upload" id="navUpload"
+            class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden whitespace-nowrap">
+            Subir Fotos
+          </a>
+          <a href="/albums" id="navAlbums"
+            class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden whitespace-nowrap">
+            Álbum
+          </a>
+        </div>
+
+        <div id="userDropdown" class="relative hidden">
+          <button id="dropdownTrigger"
+            class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors hover:bg-white/10 cursor-pointer text-left">
+            <div class="min-w-0 max-w-[140px]">
+              <div id="dropdownName" class="text-wedding-gold font-medium text-sm leading-tight truncate"></div>
+              <div id="dropdownEmail" class="text-wedding-cream/50 text-xs leading-tight truncate hidden xl:block"></div>
+            </div>
+            <svg class="w-4 h-4 shrink-0 text-wedding-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div id="dropdownMenu"
+            class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-50 overflow-hidden">
+            <button id="logoutBtn"
+              class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar sesión
+            </button>
           </div>
-          <svg class="w-4 h-4 shrink-0 text-wedding-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </div>
+
+        <button id="hamburgerBtn" class="lg:hidden flex items-center justify-center w-9 h-9 rounded hover:bg-white/10 transition-colors cursor-pointer hidden">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path id="hamburgerIcon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <div id="dropdownMenu" class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-50 overflow-hidden">
-          <button id="logoutBtn" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Cerrar sesión
-          </button>
-        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobileMenu" class="lg:hidden hidden border-t border-white/10">
+    <div class="px-4 py-3 space-y-1">
+      <a href="/upload" id="navUploadMobile"
+        class="block px-3 py-2 rounded transition-colors hover:text-wedding-gold hover:bg-white/5 text-sm font-medium hidden">
+        Subir Fotos
+      </a>
+      <a href="/albums" id="navAlbumsMobile"
+        class="block px-3 py-2 rounded transition-colors hover:text-wedding-gold hover:bg-white/5 text-sm font-medium hidden">
+        Álbum
+      </a>
+      <div id="mobileUserSection" class="hidden border-t border-white/10 pt-3 mt-1 px-3">
+        <div id="mobileName" class="text-wedding-gold font-medium text-sm truncate"></div>
+        <div id="mobileEmail" class="text-wedding-cream/50 text-xs truncate"></div>
+        <button id="logoutBtnMobile"
+          class="mt-2 w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-white/5 rounded transition-colors cursor-pointer flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   </div>
@@ -48,36 +79,54 @@
     const userEmail = localStorage.getItem("wedding_email");
 
     if (userName) {
-      document.getElementById("navUpload").classList.remove("hidden");
-      document.getElementById("navAlbums").classList.remove("hidden");
+      ["navUpload", "navAlbums"].forEach(id => document.getElementById(id).classList.remove("hidden"));
+      ["navUploadMobile", "navAlbumsMobile"].forEach(id => document.getElementById(id).classList.remove("hidden"));
+      document.getElementById("hamburgerBtn").classList.remove("hidden");
 
       const dd = document.getElementById("userDropdown");
-      dd.classList.remove("hidden");
-
+      const mobileSection = document.getElementById("mobileUserSection");
+      const mq = window.matchMedia("(min-width: 1024px)");
+      const toggleDD = (e) => dd.classList.toggle("hidden", !e.matches);
+      toggleDD(mq);
+      mq.addEventListener("change", toggleDD);
+      mobileSection.classList.remove("hidden");
+      document.getElementById("mobileName").textContent = userName;
+      document.getElementById("mobileEmail").textContent = userEmail || "";
       document.getElementById("dropdownName").textContent = userName;
       document.getElementById("dropdownEmail").textContent = userEmail || "";
 
       const path = window.location.pathname;
       if (path === "/upload") {
         document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
+        document.getElementById("navUploadMobile").classList.add("bg-wedding-gold/10", "text-wedding-gold");
       } else if (path.startsWith("/album")) {
         document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
+        document.getElementById("navAlbumsMobile").classList.add("bg-wedding-gold/10", "text-wedding-gold");
       }
 
-      // Dropdown toggle
-      const trigger = document.getElementById("dropdownTrigger");
-      const menu = document.getElementById("dropdownMenu");
-      trigger.addEventListener("click", (e) => {
+      document.getElementById("dropdownTrigger").addEventListener("click", (e) => {
         e.stopPropagation();
-        menu.classList.toggle("hidden");
+        document.getElementById("dropdownMenu").classList.toggle("hidden");
       });
-      document.addEventListener("click", () => menu.classList.add("hidden"));
+      document.addEventListener("click", () => document.getElementById("dropdownMenu").classList.add("hidden"));
 
-      document.getElementById("logoutBtn").addEventListener("click", () => {
+      const doLogout = () => {
         localStorage.removeItem("wedding_user");
         localStorage.removeItem("wedding_email");
         localStorage.removeItem("wedding_id");
         window.location.href = "/";
+      };
+      document.getElementById("logoutBtn").addEventListener("click", doLogout);
+      document.getElementById("logoutBtnMobile").addEventListener("click", doLogout);
+
+      const mobileMenu = document.getElementById("mobileMenu");
+      const hamburgerIcon = document.getElementById("hamburgerIcon");
+      document.getElementById("hamburgerBtn").addEventListener("click", () => {
+        const wasHidden = mobileMenu.classList.contains("hidden");
+        mobileMenu.classList.toggle("hidden");
+        hamburgerIcon.setAttribute("d", wasHidden
+          ? "M6 18L18 6M6 6l12 12"
+          : "M4 6h16M4 12h16M4 18h16");
       });
     }
   </script>

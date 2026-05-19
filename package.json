@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "db:init": "npx tsx src/lib/init-db.ts"
+    "db:init": "npx tsx src/lib/init-db.ts",
+    "heic:convert": "npx tsx scripts/convert-existing-heic.ts"
   },
   "overrides": {
     "vite": "^7"
@@ -19,6 +20,7 @@
     "@tailwindcss/postcss": "^4.3.0",
     "astro": "^6.3.3",
     "dotenv": "^17.4.2",
+    "heic2any": "^0.0.4",
     "mysql2": "^3.22.3",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.3.0"
