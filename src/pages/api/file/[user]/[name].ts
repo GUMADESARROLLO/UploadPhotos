@@ -28,6 +28,8 @@ export const GET: APIRoute = async ({ params }) => {
       ".avif": "image/avif",
       ".bmp": "image/bmp",
       ".svg": "image/svg+xml",
+      ".heic": "image/heic",
+      ".heif": "image/heif",
     };
     const contentType = mimeMap[ext] || "application/octet-stream";
 
