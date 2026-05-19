@@ -1,3 +1,4 @@
+version: '3'
 services:
   app:
     container_name: cn_uploader
@@ -11,7 +12,9 @@ services:
       PORT: '4321'
       DB_HOST: ${MYSQL_HOST:-db}
       DB_PORT: ${MYSQL_PORT:-3306}
-      DB_USER: ${MYSQL_USER:-usr_fleetfuel}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-pwd_fleetfuel}
-      DB_NAME: ${MYSQL_DATABASE:-db_fleetfuel}
+      DB_USER: ${MYSQL_USER:-root}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-}
+      DB_NAME: ${MYSQL_DATABASE:-wedding_photos}
+    volumes:
+      - ./uploads:/app/uploads
     restart: unless-stopped
