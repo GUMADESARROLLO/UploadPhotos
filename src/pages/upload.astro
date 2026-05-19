@@ -49,6 +49,7 @@ import Navbar from "../components/Navbar.astro";
     import { savePhoto, syncPhotoToServer } from "/js/db.js";
 
     const userName = localStorage.getItem("wedding_user");
+    const guestId = localStorage.getItem("wedding_id");
     if (!userName) {
       window.location.href = "/";
     }
@@ -173,7 +174,7 @@ import Navbar from "../components/Navbar.astro";
           await savePhoto(file, userName);
 
           const email = localStorage.getItem("wedding_email") || "";
-          syncPhotoToServer(file, userName, email);
+          syncPhotoToServer(file, userName, email, guestId);
 
           fill.style.width = "100%";
           status.textContent = "Completado";

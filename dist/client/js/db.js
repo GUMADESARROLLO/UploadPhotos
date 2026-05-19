@@ -192,11 +192,12 @@ export async function deletePhoto(id) {
 
 const SERVER = typeof window !== "undefined" ? window.location.origin : "";
 
-export async function syncPhotoToServer(file, userName, email) {
+export async function syncPhotoToServer(file, userName, email, guestId) {
   const form = new FormData();
   form.append("file", file);
   form.append("userName", userName);
   form.append("email", email || "");
+  if (guestId) form.append("guestId", guestId);
   try {
     const res = await fetch(SERVER + "/api/upload", { method: "POST", body: form });
     if (!res.ok) throw new Error();

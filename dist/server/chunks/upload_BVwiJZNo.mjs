@@ -1,37 +1,40 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import 'mysql2/promise';
+import { i as initDb, g as getPool } from './db-config_CeRJE7Ay.mjs';
+
+function sanitizeFolderName(name) {
+  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").toLowerCase();
+}
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-const META_PATH = path.join(UPLOADS_DIR, "meta.json");
-async function readMeta() {
-  try {
-    const raw = await fs.readFile(META_PATH, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
-}
-async function writeMeta(data) {
-  await fs.writeFile(META_PATH, JSON.stringify(data, null, 2), "utf-8");
-}
 const POST = async ({ request }) => {
   try {
+    await initDb();
+    const pool = getPool();
     const form = await request.formData();
     const file = form.get("file");
+    const guestId = form.get("guestId")?.toString();
     const userName = form.get("userName")?.toString();
     const email = form.get("email")?.toString();
-    if (!file || !userName) {
-      return new Response(JSON.stringify({ error: "file and userName required" }), { status: 400 });
+    if (!file || !userName || !guestId) {
+      return new Response(JSON.stringify({ error: "file, userName and guestId required" }), { status: 400 });
     }
-    const userDir = path.join(UPLOADS_DIR, encodeURIComponent(userName));
+    const folderName = sanitizeFolderName(userName);
+    const userDir = path.join(UPLOADS_DIR, folderName);
     await fs.mkdir(userDir, { recursive: true });
     const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const filePath = path.join(userDir, safeName);
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(filePath, buffer);
-    const meta = await readMeta();
+    const [result] = await pool.execute(
+      "INSERT INTO photos (guestId, folderName, fileName, storedName, size, type, userName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [parseInt(guestId), folderName, file.name, safeName, file.size, file.type, userName, email || ""]
+    );
+    const insertId = result.insertId;
     const entry = {
-      id: Date.now(),
+      id: insertId,
+      folderName,
       fileName: file.name,
       storedName: safeName,
       size: file.size,
@@ -40,8 +43,6 @@ const POST = async ({ request }) => {
       email: email || "",
       uploadedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
-    meta.push(entry);
-    await writeMeta(meta);
     return new Response(JSON.stringify(entry), { status: 201 });
   } catch (err) {
     console.error("Upload error:", err);

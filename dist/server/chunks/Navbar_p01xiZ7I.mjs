@@ -1,6 +1,6 @@
-import { c as createComponent } from './astro-component_Cb5JI4XL.mjs';
+import { c as createComponent } from './astro-component_BN3HqGq1.mjs';
 import 'piccolore';
-import { k as createRenderInstruction, n as renderHead, p as renderSlot, q as renderTemplate, m as maybeRenderHead } from './server_AahBSjhV.mjs';
+import { k as createRenderInstruction, n as renderHead, p as renderSlot, q as renderTemplate, m as maybeRenderHead } from './server_clT11A7q.mjs';
 import 'clsx';
 
 async function renderScript(result, id) {
@@ -25,9 +25,9 @@ const $$Layout = createComponent(($$result, $$props, $$slots) => {
 }, "E:/Documents/MarangeloDev/UploadPhotos/src/layouts/Layout.astro", void 0);
 
 const $$Navbar = createComponent(($$result, $$props, $$slots) => {
-  return renderTemplate`${maybeRenderHead()}<nav class="bg-wedding-ink text-wedding-cream px-6 py-4 shadow-lg"> <div class="max-w-6xl mx-auto flex items-center justify-between"> <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity"> <span class="text-2xl">💍</span> <span class="text-xl font-semibold tracking-wide font-serif">Álbum de Boda</span> </a> <div class="flex items-center gap-6"> <span id="welcomeUser" class="text-wedding-gold text-sm font-medium hidden"></span> <div class="flex items-center gap-4 text-sm font-medium"> <a href="/upload" class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold" id="navUpload">
+  return renderTemplate`${maybeRenderHead()}<nav class="bg-wedding-ink text-wedding-cream px-6 py-4 shadow-lg"> <div class="max-w-6xl mx-auto flex items-center justify-between"> <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity"> <span class="text-2xl">💍</span> <span class="text-xl font-semibold tracking-wide font-serif">Álbum de Boda</span> </a> <div class="flex items-center gap-6"> <span id="welcomeUser" class="text-wedding-gold text-sm font-medium hidden"></span> <div class="flex items-center gap-4 text-sm font-medium"> <a href="/upload" class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden" id="navUpload">
 Subir Fotos
-</a> <a href="/albums" class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold" id="navAlbums">
+</a> <a href="/albums" class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden" id="navAlbums">
 Álbumes
 </a> <button id="logoutBtn" class="px-3 py-1.5 rounded transition-colors text-red-300 hover:text-red-200 hover:bg-red-900/30 cursor-pointer hidden">
 Cerrar sesión

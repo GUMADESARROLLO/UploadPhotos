@@ -1,22 +1,23 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import 'mysql2/promise';
+import { i as initDb, g as getPool } from './db-config_CeRJE7Ay.mjs';
 
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-const META_PATH = path.join(UPLOADS_DIR, "meta.json");
 const GET = async ({ params }) => {
   const userName = params.user ? decodeURIComponent(params.user) : "";
   try {
-    const raw = await fs.readFile(META_PATH, "utf-8");
-    const meta = JSON.parse(raw);
-    const photos = meta.filter((p) => p.userName === userName);
-    const list = photos.map((p) => ({
+    await initDb();
+    const pool = getPool();
+    const [rows] = await pool.execute(
+      "SELECT id, folderName, fileName, storedName, size, type, userName, uploadedAt FROM photos WHERE userName = ? ORDER BY uploadedAt DESC",
+      [userName]
+    );
+    const list = rows.map((p) => ({
       id: p.id,
       fileName: p.fileName,
       size: p.size,
       type: p.type,
       userName: p.userName,
       uploadedAt: p.uploadedAt,
-      url: `/api/file/${encodeURIComponent(p.userName)}/${p.storedName}`
+      url: `/api/file/${encodeURIComponent(p.folderName)}/${p.storedName}`
     }));
     return new Response(JSON.stringify(list), {
       status: 200,

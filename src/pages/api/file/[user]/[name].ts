@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro";
 import fs from "node:fs/promises";
 import path from "node:path";
+import mysql from "mysql2/promise";
+import { getPool, initDb } from "../../../../lib/db-config";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-const META_PATH = path.join(UPLOADS_DIR, "meta.json");
 
 export const GET: APIRoute = async ({ params }) => {
   const userName = params.user ? decodeURIComponent(params.user) : "";
@@ -47,21 +48,24 @@ export const DELETE: APIRoute = async ({ params }) => {
     return new Response(JSON.stringify({ error: "Missing params" }), { status: 400 });
   }
 
+  // Delete file from disk
   const filePath = path.join(UPLOADS_DIR, encodeURIComponent(userName), storedName);
-
   try {
     await fs.unlink(filePath);
   } catch {
-    // file may not exist, continue to clean meta
+    // file may not exist, continue
   }
 
+  // Delete record from MySQL
   try {
-    const raw = await fs.readFile(META_PATH, "utf-8");
-    let meta = JSON.parse(raw);
-    meta = meta.filter((p) => !(p.userName === userName && p.storedName === storedName));
-    await fs.writeFile(META_PATH, JSON.stringify(meta, null, 2), "utf-8");
-  } catch {
-    // meta may not exist
+    await initDb();
+    const pool = getPool();
+    await pool.execute(
+      "DELETE FROM photos WHERE userName = ? AND storedName = ?",
+      [userName, storedName]
+    );
+  } catch (err) {
+    console.error("DB delete error:", err);
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });

@@ -89,6 +89,8 @@ import Navbar from "../components/Navbar.astro";
   <script type="module">
     import { findUserByEmail, createUser } from "/js/db.js";
 
+    const SERVER = window.location.origin;
+
     const storedEmail = localStorage.getItem("wedding_email");
     if (storedEmail) {
       window.location.href = "/upload";
@@ -110,6 +112,37 @@ import Navbar from "../components/Navbar.astro";
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
+    async function findGuestOnServer(email) {
+      try {
+        const res = await fetch(SERVER + "/api/invitados?email=" + encodeURIComponent(email));
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    async function createGuestOnServer(nombre, email) {
+      try {
+        const res = await fetch(SERVER + "/api/invitados", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, email }),
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    function loginGuest(guest) {
+      localStorage.setItem("wedding_id", String(guest.id));
+      localStorage.setItem("wedding_user", guest.nombre);
+      localStorage.setItem("wedding_email", guest.email);
+      window.location.href = "/upload";
+    }
+
     emailForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = emailInput.value.trim().toLowerCase();
@@ -126,18 +159,29 @@ import Navbar from "../components/Navbar.astro";
       currentEmail = email;
 
       try {
-        const user = await findUserByEmail(email);
+        const serverGuest = await findGuestOnServer(email);
+        if (serverGuest) {
+          loginGuest(serverGuest);
+          return;
+        }
 
-        if (user) {
-          localStorage.setItem("wedding_user", user.userName);
+        const localUser = await findUserByEmail(email);
+        if (localUser) {
+          const created = await createGuestOnServer(localUser.userName, email);
+          if (created) {
+            loginGuest(created);
+            return;
+          }
+          localStorage.setItem("wedding_user", localUser.userName);
           localStorage.setItem("wedding_email", email);
           window.location.href = "/upload";
-        } else {
-          step1.classList.add("hidden");
-          step2.classList.remove("hidden");
-          step2Email.textContent = `Correo: ${email}`;
-          userNameInput.focus();
+          return;
         }
+
+        step1.classList.add("hidden");
+        step2.classList.remove("hidden");
+        step2Email.textContent = `Correo: ${email}`;
+        userNameInput.focus();
       } catch (err) {
         emailError.textContent = "Error al verificar. Intenta de nuevo.";
         emailError.classList.remove("hidden");
@@ -153,6 +197,12 @@ import Navbar from "../components/Navbar.astro";
       if (!name) return;
 
       try {
+        const serverGuest = await createGuestOnServer(name, currentEmail);
+        if (serverGuest) {
+          loginGuest(serverGuest);
+          return;
+        }
+
         await createUser(name, currentEmail);
         localStorage.setItem("wedding_user", name);
         localStorage.setItem("wedding_email", currentEmail);

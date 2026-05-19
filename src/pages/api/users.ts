@@ -1,25 +1,21 @@
 import type { APIRoute } from "astro";
-import fs from "node:fs/promises";
-import path from "node:path";
-
-const META_PATH = path.resolve(process.cwd(), "uploads", "meta.json");
+import mysql from "mysql2/promise";
+import { getPool, initDb } from "../../lib/db-config";
 
 export const GET: APIRoute = async () => {
   try {
-    const raw = await fs.readFile(META_PATH, "utf-8");
-    const meta: Record<string, unknown>[] = JSON.parse(raw);
+    await initDb();
+    const pool = getPool();
+    const [rows] = await pool.execute<mysql.RowDataPacket[]>(
+      "SELECT userName, email, COUNT(*) AS photoCount FROM photos GROUP BY userName, email ORDER BY userName"
+    );
 
-    const userMap = new Map<string, { userName: string; email: string; photoCount: number }>();
-    for (const entry of meta) {
-      const name = entry.userName as string;
-      const email = (entry.email as string) || "";
-      if (!userMap.has(name)) {
-        userMap.set(name, { userName: name, email, photoCount: 0 });
-      }
-      userMap.get(name)!.photoCount += 1;
-    }
+    const users = (rows as { userName: string; email: string; photoCount: number }[]).map((r) => ({
+      userName: r.userName,
+      email: r.email || "",
+      photoCount: r.photoCount,
+    }));
 
-    const users = [...userMap.values()];
     return new Response(JSON.stringify(users), {
       status: 200,
       headers: { "Content-Type": "application/json" },

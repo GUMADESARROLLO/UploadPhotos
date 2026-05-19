@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import 'mysql2/promise';
+import { i as initDb, g as getPool } from './db-config_CeRJE7Ay.mjs';
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-const META_PATH = path.join(UPLOADS_DIR, "meta.json");
 const GET = async ({ params }) => {
   const userName = params.user ? decodeURIComponent(params.user) : "";
   const storedName = params.name;
@@ -44,11 +45,14 @@ const DELETE = async ({ params }) => {
   } catch {
   }
   try {
-    const raw = await fs.readFile(META_PATH, "utf-8");
-    let meta = JSON.parse(raw);
-    meta = meta.filter((p) => !(p.userName === userName && p.storedName === storedName));
-    await fs.writeFile(META_PATH, JSON.stringify(meta, null, 2), "utf-8");
-  } catch {
+    await initDb();
+    const pool = getPool();
+    await pool.execute(
+      "DELETE FROM photos WHERE userName = ? AND storedName = ?",
+      [userName, storedName]
+    );
+  } catch (err) {
+    console.error("DB delete error:", err);
   }
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 };

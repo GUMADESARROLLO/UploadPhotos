@@ -10,14 +10,14 @@
       <div class="flex items-center gap-4 text-sm font-medium">
         <a
           href="/upload"
-          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold"
+          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
           id="navUpload"
         >
           Subir Fotos
         </a>
         <a
           href="/albums"
-          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold"
+          class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
           id="navAlbums"
         >
           Álbumes
@@ -39,16 +39,19 @@
       el.textContent = userName + (userEmail ? " · " + userEmail : "");
       el.classList.remove("hidden");
       document.getElementById("logoutBtn").classList.remove("hidden");
-    }
-    const path = window.location.pathname;
-    if (path === "/upload") {
-      document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
-    } else if (path === "/albums") {
-      document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
+      document.getElementById("navUpload").classList.remove("hidden");
+      document.getElementById("navAlbums").classList.remove("hidden");
+      const path = window.location.pathname;
+      if (path === "/upload") {
+        document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
+      } else if (path === "/albums") {
+        document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
+      }
     }
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("wedding_user");
       localStorage.removeItem("wedding_email");
+      localStorage.removeItem("wedding_id");
       window.location.href = "/";
     });
   </script>
