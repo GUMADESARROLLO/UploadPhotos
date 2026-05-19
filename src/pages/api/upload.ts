@@ -3,7 +3,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import mysql from "mysql2/promise";
 import { getPool, initDb } from "../../lib/db-config";
-import { sanitizeFolderName } from "../../lib/sanitize";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
@@ -21,7 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: "file, userName and guestId required" }), { status: 400 });
     }
 
-    const folderName = sanitizeFolderName(userName);
+    const folderName = guestId;
     const userDir = path.join(UPLOADS_DIR, folderName);
     await fs.mkdir(userDir, { recursive: true });
 

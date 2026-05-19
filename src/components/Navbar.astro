@@ -20,7 +20,7 @@
           class="px-3 py-1.5 rounded transition-colors hover:text-wedding-gold hidden"
           id="navAlbums"
         >
-          Álbumes
+          Album
         </a>
         <button
           id="logoutBtn"
@@ -44,7 +44,7 @@
       const path = window.location.pathname;
       if (path === "/upload") {
         document.getElementById("navUpload").classList.add("bg-wedding-gold", "text-wedding-dark");
-      } else if (path === "/albums") {
+      } else if (path.startsWith("/album")) {
         document.getElementById("navAlbums").classList.add("bg-wedding-gold", "text-wedding-dark");
       }
     }

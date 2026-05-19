@@ -7,8 +7,8 @@ import Navbar from "../../components/Navbar.astro";
   <Navbar />
 
   <main class="max-w-6xl mx-auto mt-8 px-4 pb-16">
-    <a href="/albums" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-wedding-dark mb-6 transition-colors">
-      ← Volver a Álbumes
+    <a href="/upload" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-wedding-dark mb-6 transition-colors">
+      ← Subir Fotos
     </a>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -83,14 +83,17 @@ import Navbar from "../../components/Navbar.astro";
   </div>
 
   <script type="module">
-    import { getPhotosByUser, deletePhoto, deletePhotosByUser, fetchPhotosFromServer, fetchPhotoBlobFromServer, deletePhotoFromServer } from "/js/db.js";
+    import { getPhotosByUser, deletePhoto, deletePhotosByUser, fetchPhotosByGuest, fetchPhotoBlobFromServer, deletePhotoFromServer } from "/js/db.js";
 
-    const params = new URLSearchParams(window.location.search);
-    const userName = params.get("user");
+    const qp = new URLSearchParams(window.location.search);
+    const guestId = qp.get("id");
+    const userName = qp.get("user");
 
-    if (!userName) {
+    if (!userName && !guestId) {
       window.location.href = "/albums";
     }
+
+    const resolvedName = userName || "";
 
     const title = document.getElementById("albumTitle");
     const count = document.getElementById("photoCount");
@@ -115,7 +118,7 @@ import Navbar from "../../components/Navbar.astro";
     let selected = new Set();
     let currentPhoto = null;
 
-    title.textContent = `Álbum de ${userName}`;
+    title.textContent = guestId ? `Álbum` : `Álbum de ${userName}`;
 
     function formatSize(bytes) {
       if (bytes < 1024) return bytes + " B";
@@ -245,8 +248,8 @@ import Navbar from "../../components/Navbar.astro";
     }
 
     async function loadPhotos() {
-      const localPhotos = await getPhotosByUser(userName);
-      const serverPhotos = await fetchPhotosFromServer(userName);
+      const localPhotos = await getPhotosByUser(resolvedName);
+      const serverPhotos = guestId ? await fetchPhotosByGuest(guestId) : [];
 
       const localMap = {};
       localPhotos.forEach((p) => { localMap[p.fileName] = p; });
@@ -314,11 +317,12 @@ import Navbar from "../../components/Navbar.astro";
     });
 
     deleteAlbumBtn.addEventListener("click", async () => {
-      if (!confirm(`¿Eliminar todo el álbum de ${userName} (${photos.length} fotos)? Esta acción no se puede deshacer.`)) return;
+      const displayName = userName || resolvedName;
+      if (!confirm(`¿Eliminar todo el álbum de ${displayName} (${photos.length} fotos)? Esta acción no se puede deshacer.`)) return;
       for (const photo of photos) {
         if (photo.url) await deletePhotoFromServer(photo.url);
       }
-      await deletePhotosByUser(userName);
+      await deletePhotosByUser(resolvedName);
       viewer.classList.add("hidden");
       await loadPhotos();
     });

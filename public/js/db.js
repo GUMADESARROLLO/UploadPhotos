@@ -235,6 +235,16 @@ export async function fetchPhotosFromServer(userName) {
   }
 }
 
+export async function fetchPhotosByGuest(guestId) {
+  try {
+    const res = await fetch(SERVER + "/api/photos-by-guest/" + guestId);
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchPhotoBlobFromServer(url) {
   try {
     const res = await fetch(url);
