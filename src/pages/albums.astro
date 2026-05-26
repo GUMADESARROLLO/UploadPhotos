@@ -175,15 +175,16 @@ import Navbar from "../components/Navbar.astro";
 
       detailImg.classList.add("hidden");
       detailVideo.classList.add("hidden");
-      detailVideo.src = "";
+      detailVideo.pause();
+      detailVideo.removeAttribute("src");
 
       if (photo.isVideo) {
-        detailVideo.classList.remove("hidden");
         detailVideo.src = photo.url;
-        detailVideo.currentTime = 0;
+        detailVideo.load();
+        detailVideo.classList.remove("hidden");
       } else {
-        detailImg.classList.remove("hidden");
         detailImg.src = photo.url;
+        detailImg.classList.remove("hidden");
       }
 
       detailFileName.textContent = photo.fileName;

@@ -177,32 +177,11 @@ import Navbar from "../components/Navbar.astro";
         const { fill, status, id } = addFileToQueue(file);
 
         try {
-          status.textContent = "Procesando...";
-          fill.style.width = "20%";
-
-          let uploadFile = file;
-
-          if (isHeicFile(file)) {
-            status.textContent = "Convirtiendo HEIC a WebP...";
-            fill.style.width = "40%";
-            try {
-              await import("/js/heic2any.js");
-              const heic2any = window.heic2any;
-              const result = await heic2any({ blob: file, toType: "image/webp", quality: 0.95 });
-              const blob = Array.isArray(result) ? result[0] : result;
-              const webpName = file.name.replace(/\.(heic|heif|heics|heifs)$/i, ".webp");
-              uploadFile = new File([blob], webpName, { type: "image/webp" });
-            } catch (convErr) {
-              console.error("HEIC conversion error, uploading original:", convErr);
-            }
-            fill.style.width = "60%";
-          }
-
-          fill.style.width = "60%";
-          status.textContent = "Subiendo al servidor...";
+          status.textContent = "Subiendo...";
+          fill.style.width = "50%";
 
           const email = localStorage.getItem("wedding_email") || "";
-          await uploadPhotoToServer(uploadFile, userName, email, guestId);
+          await uploadPhotoToServer(file, userName, email, guestId);
 
           fill.style.width = "100%";
           status.textContent = "Completado";
