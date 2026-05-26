@@ -1,8 +1,6 @@
 import type { APIRoute } from "astro";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import mysql from "mysql2/promise";
-import { getPool, initDb } from "../../../../lib/db-config";
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
@@ -25,14 +23,13 @@ const mimeMap: Record<string, string> = {
 const VIDEO_EXTS = [".mp4", ".webm", ".mov"];
 
 export const GET: APIRoute = async ({ params, request }) => {
-  const folderName = params.user ? decodeURIComponent(params.user) : "";
   const storedName = params.name;
 
-  if (!folderName || !storedName) {
+  if (!storedName) {
     return new Response("Not found", { status: 404 });
   }
 
-  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(folderName), storedName);
+  const filePath = path.join(UPLOADS_DIR, storedName);
 
   try {
     const fileSize = (await fsp.stat(filePath)).size;
@@ -78,31 +75,17 @@ export const GET: APIRoute = async ({ params, request }) => {
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
-  const folderName = params.user ? decodeURIComponent(params.user) : "";
   const storedName = params.name;
 
-  if (!folderName || !storedName) {
-    return new Response(JSON.stringify({ error: "Missing params" }), { status: 400 });
+  if (!storedName) {
+    return new Response(JSON.stringify({ error: "Missing filename" }), { status: 400 });
   }
 
-  // Delete file from disk
-  const filePath = path.join(UPLOADS_DIR, encodeURIComponent(folderName), storedName);
+  const filePath = path.join(UPLOADS_DIR, storedName);
   try {
     await fsp.unlink(filePath);
   } catch {
     // file may not exist, continue
-  }
-
-  // Delete record from MySQL
-  try {
-    await initDb();
-    const pool = getPool();
-    await pool.execute(
-      "DELETE FROM photos WHERE folderName = ? AND storedName = ?",
-      [folderName, storedName]
-    );
-  } catch (err) {
-    console.error("DB delete error:", err);
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });

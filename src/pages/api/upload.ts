@@ -36,13 +36,13 @@ export const POST: APIRoute = async ({ request }) => {
     let buffer = Buffer.from(await file.arrayBuffer());
     let fileType = file.type;
 
-    if (isHeic(file.name, file.type)) {
+    if (isHeic(file.name, file.type) && safeName.match(/\.(heic|heif|heics|heifs)$/i)) {
       try {
         buffer = await sharp(buffer).webp({ quality: 85 }).toBuffer();
         fileType = "image/webp";
         safeName = safeName.replace(/\.(heic|heif|heics|heifs)$/i, ".webp");
       } catch (convErr) {
-        console.error("HEIC server conversion error, saving original:", convErr);
+        console.warn("sharp HEIC conversion failed, saving original:", convErr.message);
       }
     }
 
